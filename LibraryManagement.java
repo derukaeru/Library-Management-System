@@ -193,7 +193,6 @@ public class LibraryManagement {
       )
     );
 
-    // Seed one overdue loan (10 days ago, was due 3 days ago) for demo
     String pastBorrow = LocalDate.now()
       .minusDays(10)
       .format(DateTimeFormatter.ofPattern(DATE_FMT));
@@ -918,11 +917,6 @@ public class LibraryManagement {
       System.out.println("  9.  View All Active Loans");
       System.out.println("  10. Waive Student Fee");
       thin();
-      System.out.println("  REPORTS");
-      System.out.println("  11. Overdue Books Report");
-      System.out.println("  12. Lost / Damaged Books Report");
-      System.out.println("  13. Full Transaction Log");
-      thin();
       System.out.println("  0.  Logout");
       thin();
 
@@ -938,9 +932,6 @@ public class LibraryManagement {
         case "8" -> adminStudentHistory();
         case "9" -> adminActiveLoans();
         case "10" -> adminWaiveFee();
-        case "11" -> adminOverdueReport();
-        case "12" -> adminLostDamagedReport();
-        case "13" -> adminTransactionLog();
         case "0" -> {
           return;
         }
@@ -1258,123 +1249,6 @@ public class LibraryManagement {
       System.out.println("Fee waived for " + s.fullName() + ".");
     } else {
       System.out.println("Cancelled.");
-    }
-    pause();
-  }
-
-  // =========================================================
-  //  ADMIN: REPORTS
-  // =========================================================
-
-  static void adminOverdueReport() throws IOException {
-    divider();
-    System.out.println("  OVERDUE BOOKS REPORT");
-    System.out.println("  Generated: " + nowDateTime());
-    thin();
-
-    boolean any = false;
-    System.out.printf(
-      "  %-10s %-34s %-12s %-20s %-12s %-10s %-12s%n",
-      "Accession",
-      "Title",
-      "Student ID",
-      "Borrower",
-      "Due Date",
-      "Days Late",
-      "Fine (PHP)"
-    );
-    thin();
-
-    for (BorrowSlot slot : activeLoans.values()) {
-      long over = daysOverdue(slot.dueDate);
-      if (over > 0) {
-        Book b = bookDB.get(slot.accessionNo);
-        Student s = studentDB.get(slot.studentId);
-        System.out.printf(
-          "  %-10s %-34s %-12s %-20s %-12s %-10d %-12.2f%n",
-          slot.accessionNo,
-          (b != null) ? truncate(b.title, 33) : slot.accessionNo,
-          slot.studentId,
-          (s != null) ? truncate(s.fullName(), 19) : slot.studentId,
-          slot.dueDate,
-          over,
-          over * LATE_FEE_PER_DAY
-        );
-        any = true;
-      }
-    }
-
-    if (!any) System.out.println("  No overdue books at this time.");
-    pause();
-  }
-
-  static void adminLostDamagedReport() throws IOException {
-    divider();
-    System.out.println("  LOST / DAMAGED BOOKS REPORT");
-    System.out.println("  Generated: " + nowDateTime());
-    thin();
-
-    boolean any = false;
-    System.out.printf(
-      "  %-10s %-34s %-22s %-10s %-10s%n",
-      "Accession",
-      "Title",
-      "Author",
-      "Status",
-      "Condition"
-    );
-    thin();
-    for (Book b : bookDB.values()) {
-      if (b.status == BookStatus.LOST || b.status == BookStatus.DAMAGED) {
-        System.out.printf(
-          "  %-10s %-34s %-22s %-10s %-10s%n",
-          b.accessionNo,
-          truncate(b.title, 33),
-          truncate(b.author, 21),
-          b.status,
-          b.condition
-        );
-        any = true;
-      }
-    }
-    if (!any) System.out.println("  No lost or damaged books on record.");
-    pause();
-  }
-
-  static void adminTransactionLog() throws IOException {
-    divider();
-    System.out.println("  FULL TRANSACTION LOG");
-    System.out.println("  Generated: " + nowDateTime());
-    thin();
-
-    if (transactions.isEmpty()) {
-      System.out.println("No transactions recorded yet.");
-      pause();
-      return;
-    }
-
-    System.out.printf(
-      "  %-10s %-12s %-34s %-10s %-21s %-10s%n",
-      "TX ID",
-      "Student ID",
-      "Book Title",
-      "Type",
-      "Date & Time",
-      "Penalty"
-    );
-    thin();
-    for (Transaction t : transactions) {
-      Book b = bookDB.get(t.accessionNo);
-      String title = (b != null) ? truncate(b.title, 33) : t.accessionNo;
-      System.out.printf(
-        "  %-10s %-12s %-34s %-10s %-21s PHP %-8.2f%n",
-        t.id,
-        t.studentId,
-        title,
-        t.type,
-        t.dateTime,
-        t.penaltyApplied
-      );
     }
     pause();
   }
